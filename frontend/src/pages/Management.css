@@ -1,0 +1,148 @@
+.management-container {
+    max-width: 1200px;
+    margin: 20px auto;
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.management-container h2, .management-container h3 {
+    text-align: center;
+    color: #007bff;
+    margin-bottom: 25px;
+}
+
+/* Forms */
+.management-form {
+    background-color: #f9f9f9;
+    padding: 25px;
+    border-radius: 8px;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+    margin-bottom: 30px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+.management-form h3 {
+    grid-column: 1 / -1; /* Spans across all columns */
+    margin-top: 0;
+    margin-bottom: 20px;
+    color: #333;
+}
+
+.management-form input[type="text"],
+.management-form input[type="number"],
+.management-form select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-sizing: border-box;
+    font-size: 1rem;
+}
+
+.management-form button {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.3s ease;
+    grid-column: span 1; /* By default, spans one column */
+}
+
+.management-form button.btn-primary {
+    background-color: #007bff;
+    color: white;
+}
+.management-form button.btn-primary:hover {
+    background-color: #0056b3;
+}
+.management-form button.btn-secondary {
+    background-color: #6c757d;
+    color: white;
+}
+.management-form button.btn-secondary:hover {
+    background-color: #5a6268;
+}
+
+/* Tables */
+.management-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+.management-table th,
+.management-table td {
+    border: 1px solid #e0e0e0;
+    padding: 12px 15px;
+    text-align: left;
+}
+
+.management-table th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+    color: #555;
+}
+
+.management-table tr:nth-child(even) {
+    background-color: #f8f8f8;
+}
+
+.management-table tr:hover {
+    background-color: #eaf6ff;
+}
+
+.actions-column {
+    display: flex;
+    gap: 8px; /* Space between buttons */
+    flex-wrap: wrap; /* Allows buttons to wrap on smaller screens */
+    justify-content: center; /* Center buttons horizontally */
+}
+
+.actions-column .btn {
+    padding: 8px 12px;
+    font-size: 0.9rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    white-space: nowrap; /* Prevent buttons from breaking words */
+}
+
+.btn-edit {
+    background-color: #ffc107;
+    color: #333;
+    border: none;
+}
+.btn-edit:hover {
+    background-color: #e0a800;
+}
+
+.btn-danger {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+}
+.btn-danger:hover {
+    background-color: #c82333;
+}
+
+.btn-success {
+    background-color: #28a745;
+    color: white;
+    border: none;
+}
+.btn-success:hover {
+    background-color: #218838;
+}
+
+/* Specific for user management role select */
+.management-table select {
+    padding: 5px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    font-size: 0.9rem;
+}
