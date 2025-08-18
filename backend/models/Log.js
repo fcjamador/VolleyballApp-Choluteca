@@ -1,52 +1,51 @@
-const { DataTypes } = require('sequelize');
+'use strict';
+const { Model, DataTypes } = require('sequelize');
 
-module.exports = (sequelize, DataTypes) => {
-    const Log = sequelize.define('Log', {
+module.exports = (sequelize) => {
+    class Log extends Model {
+        static associate(models) {
+            // Un log está asociado a un usuario
+            this.belongsTo(models.User, {
+                foreignKey: 'userId',
+                as: 'user'
+            });
+        }
+    }
+    Log.init({
         id: {
             type: DataTypes.INTEGER,
             primaryKey: true,
             autoIncrement: true
         },
-        userId: { // Usuario que realizó la acción
+        userId: {
             type: DataTypes.INTEGER,
-            allowNull: true // Podría ser null si la acción no la hizo un usuario logueado
+            allowNull: true
         },
-        action: { // Ej: 'CREATE', 'UPDATE', 'DELETE', 'LOGIN'
+        action: {
             type: DataTypes.STRING(50),
             allowNull: false
         },
-        entityType: { // Ej: 'User', 'Team', 'Match', 'Tournament'
+        entityType: {
             type: DataTypes.STRING(100),
             allowNull: false
         },
-        entityId: { // ID de la entidad afectada
+        entityId: {
             type: DataTypes.INTEGER,
-            allowNull: true // Podría ser null para acciones generales
-        },
-        oldData: { // Datos antes del cambio (JSON)
-            type: DataTypes.JSONB, // JSONB para PostgreSQL es eficiente
             allowNull: true
         },
-        newData: { // Datos después del cambio (JSON)
+        oldData: {
             type: DataTypes.JSONB,
             allowNull: true
         },
-        timestamp: {
-            type: DataTypes.DATE,
-            defaultValue: DataTypes.NOW
-        }
+        newData: {
+            type: DataTypes.JSONB,
+            allowNull: true
+        },
     }, {
-        tableName: 'logs',
-        timestamps: false // Manually manage timestamp
+        sequelize,
+        modelName: 'Log',
+        tableName: 'Logs', // <-- CORREGIDO: de 'logs' a 'Logs'
+        timestamps: true // Usar createdAt y updatedAt de Sequelize
     });
-
-    Log.associate = (models) => {
-        // Un log está asociado a un usuario
-        Log.belongsTo(models.User, {
-            foreignKey: 'userId',
-            as: 'user'
-        });
-    };
-
     return Log;
 };

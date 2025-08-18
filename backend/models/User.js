@@ -27,7 +27,7 @@ module.exports = (sequelize, DataTypes) => {
         },
         // El campo para el rol se definirá en las asociaciones
     }, {
-        tableName: 'users',
+        tableName: 'Users', // <-- CORREGIDO: de 'users' a 'Users'
         timestamps: true // Para createdAt y updatedAt
     });
 

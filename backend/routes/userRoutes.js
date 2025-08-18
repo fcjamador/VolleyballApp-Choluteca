@@ -1,18 +1,27 @@
 const express = require('express');
-const { getUsers, getUserById, updateUser, deleteUser, createUserByAdmin } = require('../controllers/userController');
-const { protect, authorizeRoles } = require('../middleware/authMiddleware');
-
 const router = express.Router();
+const {
+    getUsers,
+    getUserById,
+    getRoles,
+    updateUser,
+    deleteUser,
+    createUserByAdmin
+} = require('../controllers/userController');
 
-// Rutas de gestión de usuarios (solo para Admin y Superadmin)
-// Para obtener todos los usuarios
-router.get('/', protect, authorizeRoles('Admin', 'Superadmin'), getUsers);
-// Para crear un nuevo usuario por un Admin/Superadmin
-router.post('/', protect, authorizeRoles('Admin', 'Superadmin'), createUserByAdmin);
-// Para obtener, actualizar o eliminar un usuario específico
+// Importar middlewares
+const { protect, authorize } = require('../middleware/authMiddleware');
+
+// Definir rutas y protegerlas con roles
+router.route('/')
+    .get(protect, authorize('Admin', 'Superadmin'), getUsers)
+    .post(protect, authorize('Admin', 'Superadmin'), createUserByAdmin);
+
+router.get('/roles', protect, authorize('Admin', 'Superadmin'), getRoles);
+
 router.route('/:id')
-    .get(protect, authorizeRoles('Admin', 'Superadmin'), getUserById)
-    .put(protect, authorizeRoles('Admin', 'Superadmin'), updateUser) // Admin puede cambiar isActive, Superadmin también el rol
-    .delete(protect, authorizeRoles('Superadmin'), deleteUser); // Solo Superadmin puede eliminar
+    .get(protect, authorize('Admin', 'Superadmin'), getUserById)
+    .put(protect, authorize('Admin', 'Superadmin'), updateUser)
+    .delete(protect, authorize('Superadmin'), deleteUser);
 
 module.exports = router;

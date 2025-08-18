@@ -7,7 +7,7 @@ const sequelize = new Sequelize(
     process.env.DB_PASSWORD,
     {
         host: process.env.DB_HOST,
-        dialect: 'postgres', // Especifica que estamos usando PostgreSQL
+        dialect: 'mysql', // Especifica que estamos usando MySQL
         logging: false, // Puedes cambiar a true para ver las consultas SQL en la consola
         pool: {
             max: 5,

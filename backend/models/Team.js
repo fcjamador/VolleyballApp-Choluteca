@@ -1,7 +1,23 @@
-const { DataTypes } = require('sequelize');
+'use strict';
+const { Model } = require('sequelize');
 
 module.exports = (sequelize, DataTypes) => {
-    const Team = sequelize.define('Team', {
+    class Team extends Model {
+        static associate(models) {
+            // Un equipo puede tener muchos jugadores
+            this.hasMany(models.Player, {
+                foreignKey: 'teamId',
+                as: 'players'
+            });
+            // Un equipo puede participar en muchos torneos
+            this.belongsToMany(models.Tournament, {
+                through: 'TournamentTeams', // <-- CORREGIDO
+                as: 'Tournaments',
+                foreignKey: 'teamId'
+            });
+        }
+    }
+    Team.init({
         id: {
             type: DataTypes.INTEGER,
             primaryKey: true,
@@ -12,29 +28,15 @@ module.exports = (sequelize, DataTypes) => {
             allowNull: false,
             unique: true
         },
-        coachName: { // Nombre del entrenador
+        coachName: {
             type: DataTypes.STRING(100),
             allowNull: true
         },
-        // La asociación con el usuario que lo creó (opcional, pero útil)
-        // createdByUserId: DataTypes.INTEGER
     }, {
-        tableName: 'teams',
-        timestamps: true // Para createdAt y updatedAt
+        sequelize,
+        modelName: 'Team',
+        tableName: 'Teams', // <-- CORREGIDO
+        timestamps: true
     });
-
-    Team.associate = (models) => {
-        // Un equipo puede tener muchos jugadores
-        Team.hasMany(models.Player, {
-            foreignKey: 'teamId',
-            as: 'players'
-        });
-        // Opcional: Si quieres registrar qué usuario creó el equipo
-        // Team.belongsTo(models.User, {
-        //     foreignKey: 'createdByUserId',
-        //     as: 'creator'
-        // });
-    };
-
     return Team;
 };

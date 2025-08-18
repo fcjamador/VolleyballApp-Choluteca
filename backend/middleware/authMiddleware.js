@@ -1,51 +1,55 @@
 const jwt = require('jsonwebtoken');
-const db = require('../models'); // Importa tus modelos
-const User = db.User; // Accede al modelo User
+const asyncHandler = require('express-async-handler');
+const db = require('../models');
+const User = db.User;
+const Role = db.Role;
 
-// Middleware para verificar si el usuario está autenticado
-const protect = async (req, res, next) => {
+// Middleware para proteger rutas, verifica el token JWT
+const protect = asyncHandler(async (req, res, next) => {
     let token;
 
-    // Verifica si el token está en los headers de la petición (Bearer Token)
     if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
         try {
-            // Extrae el token
+            // Obtener el token del header 'Bearer <token>'
             token = req.headers.authorization.split(' ')[1];
 
-            // Verifica el token
+            // Verificar el token
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-            // Busca el usuario por ID y lo adjunta al objeto de la petición (req.user)
-            // Excluye la contraseña para seguridad
+            // Obtener el usuario del token (sin la contraseña) y con su rol
             req.user = await User.findByPk(decoded.id, {
                 attributes: { exclude: ['password'] },
-                include: [{ model: db.Role, as: 'role' }] // Incluye el rol del usuario
+                include: [{ model: Role, as: 'role' }]
             });
 
             if (!req.user) {
-                return res.status(401).json({ message: 'No autorizado, usuario no encontrado' });
+                res.status(401);
+                throw new Error('No autorizado, usuario no encontrado');
             }
 
-            next(); // Pasa al siguiente middleware o a la ruta
+            next();
         } catch (error) {
             console.error(error);
-            res.status(401).json({ message: 'No autorizado, token fallido' });
+            res.status(401);
+            throw new Error('No autorizado, token inválido');
         }
     }
 
     if (!token) {
-        res.status(401).json({ message: 'No autorizado, no hay token' });
+        res.status(401);
+        throw new Error('No autorizado, no se encontró token');
     }
-};
+});
 
-// Middleware para verificar roles (autorización)
-const authorizeRoles = (...roles) => {
+// Middleware para autorizar basado en roles de usuario
+const authorize = (...allowedRoles) => {
     return (req, res, next) => {
-        if (!req.user || !req.user.role || !roles.includes(req.user.role.name)) {
-            return res.status(403).json({ message: `Acceso denegado. Se requieren los roles: ${roles.join(', ')}` });
+        if (!req.user || !req.user.role || !allowedRoles.includes(req.user.role.name)) {
+            res.status(403); // 403 Forbidden
+            throw new Error(`Acceso denegado. Se requiere uno de los siguientes roles: ${allowedRoles.join(', ')}`);
         }
-        next();
+        next(); // El usuario tiene el rol correcto, continuar
     };
 };
 
-module.exports = { protect, authorizeRoles };
+module.exports = { protect, authorize };

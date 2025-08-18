@@ -13,7 +13,7 @@ module.exports = (sequelize, DataTypes) => {
             unique: true
         }
     }, {
-        tableName: 'roles', // Nombre real de la tabla en la DB
+        tableName: 'Roles', // <-- CORREGIDO: de 'roles' a 'Roles'
         timestamps: false // No necesitamos campos createdAt y updatedAt para roles
     });
 

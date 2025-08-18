@@ -1,57 +1,60 @@
-const { DataTypes } = require('sequelize');
+// Ruta: d:/VolleyballApp/VolleyballApp-Choluteca/backend/models/Tournament.js
+
+'use strict';
+const { Model } = require('sequelize');
 
 module.exports = (sequelize, DataTypes) => {
-    const Tournament = sequelize.define('Tournament', {
-        id: {
-            type: DataTypes.INTEGER,
-            primaryKey: true,
-            autoIncrement: true
-        },
-        name: {
-            type: DataTypes.STRING(150),
-            allowNull: false,
-            unique: true
-        },
-        startDate: {
-            type: DataTypes.DATEONLY, // Solo fecha, sin hora
-            allowNull: false
-        },
-        endDate: {
-            type: DataTypes.DATEONLY,
-            allowNull: false
-        },
-        status: { // Ej: 'Planned', 'Active', 'Completed', 'Cancelled'
-            type: DataTypes.ENUM('Planned', 'Active', 'Completed', 'Cancelled'),
-            defaultValue: 'Planned',
-            allowNull: false
-        },
-        type: { // Ej: 'League' (Liga), 'Knockout' (Eliminatoria), 'Mixed'
-            type: DataTypes.ENUM('League', 'Knockout', 'Mixed'),
-            allowNull: false
-        },
-        description: {
-            type: DataTypes.TEXT,
-            allowNull: true
-        }
-    }, {
-        tableName: 'tournaments',
-        timestamps: true
-    });
-
-    Tournament.associate = (models) => {
-        // Un torneo puede tener muchos partidos
-        Tournament.hasMany(models.Match, {
-            foreignKey: 'tournamentId',
-            as: 'matches'
-        });
-        // Muchos a Muchos: Los torneos tienen equipos participantes
-        Tournament.belongsToMany(models.Team, {
-            through: 'TournamentTeams', // Tabla intermedia
-            foreignKey: 'tournamentId',
-            otherKey: 'teamId',
-            as: 'participatingTeams'
-        });
-    };
-
-    return Tournament;
+  class Tournament extends Model {
+    static associate(models) {
+      // Un torneo tiene muchos equipos, a través de una tabla intermedia
+      this.belongsToMany(models.Team, {
+        through: 'TournamentTeams',
+        as: 'Teams',
+        foreignKey: 'tournamentId'
+      });
+      // Un torneo tiene muchos partidos
+      this.hasMany(models.Match, {
+        foreignKey: 'tournamentId',
+        as: 'matches'
+      });
+      // --- NUEVA RELACIÓN ---
+      // Un torneo tiene muchos grupos
+      this.hasMany(models.TournamentGroup, {
+        foreignKey: 'tournamentId',
+        as: 'groups'
+      });
+    }
+  }
+  Tournament.init({
+    name: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    startDate: {
+      type: DataTypes.DATE,
+      allowNull: false
+    },
+    endDate: {
+      type: DataTypes.DATE,
+      allowNull: false
+    },
+    location: {
+      type: DataTypes.STRING
+    },
+    description: DataTypes.TEXT,
+    status: {
+      type: DataTypes.ENUM('Programado', 'Activo', 'Completado', 'Cancelado'),
+      defaultValue: 'Programado'
+    },
+    type: {
+      type: DataTypes.ENUM('League', 'Knockout', 'Group Stage'),
+      defaultValue: 'League'
+    }
+  }, {
+    sequelize,
+    modelName: 'Tournament',
+    tableName: 'Tournaments',
+    timestamps: true
+  });
+  return Tournament;
 };

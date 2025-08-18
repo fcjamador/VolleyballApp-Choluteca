@@ -1,19 +1,44 @@
 const express = require('express');
-const { getPlayers, getPlayerById, createPlayer, updatePlayer, deletePlayer } = require('../controllers/playerController');
-const { protect, authorizeRoles } = require('../middleware/authMiddleware');
-
 const router = express.Router();
+const { protect, authorize } = require('../middleware/authMiddleware');
+const {
+    getPlayers,
+    getPlayerById,
+    createPlayer,
+    updatePlayer,
+    deletePlayer,
+    uploadPlayerPoints,
+    getPlayerStandings, // Importar la nueva función
+} = require('../controllers/playerController');
+const multer = require('multer');
 
-// Todas las rutas de jugadores requieren autenticación
+// Configurar multer para manejar la subida de archivos en memoria
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
+
+// Proteger todas las rutas de jugadores
 router.use(protect);
 
-// Rutas accesibles para todos los usuarios logueados
-router.get('/', getPlayers);
-router.get('/:id', getPlayerById);
+// Nueva ruta para la tabla de posiciones de jugadores (accesible a todos los logueados)
+router.route('/standings').get(getPlayerStandings);
 
-// Rutas que requieren rol de Admin o Superadmin
-router.post('/', authorizeRoles('Admin', 'Superadmin'), createPlayer);
-router.put('/:id', authorizeRoles('Admin', 'Superadmin'), updatePlayer);
-router.delete('/:id', authorizeRoles('Admin', 'Superadmin'), deletePlayer); // Puedes restringir DELETE solo a Superadmin si lo prefieres
+// Rutas CRUD para jugadores
+router.route('/')
+    .get(getPlayers)
+    .post(authorize('Admin', 'Superadmin'), createPlayer);
+
+router.route('/:id')
+    .get(getPlayerById)
+    .put(authorize('Admin', 'Superadmin'), updatePlayer)
+    .delete(authorize('Admin', 'Superadmin'), deletePlayer);
+
+// Nueva ruta para subir el archivo de puntos
+// 'pointsFile' debe coincidir con el nombre del campo en el formulario del frontend
+router.post(
+    '/upload-points',
+    authorize('Admin', 'Superadmin'),
+    upload.single('pointsFile'),
+    uploadPlayerPoints
+);
 
 module.exports = router;
