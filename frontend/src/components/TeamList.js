@@ -25,7 +25,7 @@ function TeamList() {
   }, [user.token]);
 
   useEffect(() => {
-    if (!user || (user.role !== 'Admin' && user.role !== 'Superadmin')) {
+    if (!user || user.role !== 'Admin') {
       toast.error('No autorizado para acceder a la gestión de equipos.');
       navigate('/dashboard');
       return;
@@ -77,6 +77,7 @@ function TeamList() {
             <thead className="bg-gray-100">
               <tr>
                 <th className="py-3 px-4 border-b text-left text-sm font-semibold text-gray-600">ID</th>
+                <th className="py-3 px-4 border-b text-left text-sm font-semibold text-gray-600">Logo</th>
                 <th className="py-3 px-4 border-b text-left text-sm font-semibold text-gray-600">Nombre</th>
                 <th className="py-3 px-4 border-b text-left text-sm font-semibold text-gray-600">Entrenador</th>
                 <th className="py-3 px-4 border-b text-left text-sm font-semibold text-gray-600">Jugadores</th>
@@ -87,6 +88,13 @@ function TeamList() {
               {teams.map((team) => (
                 <tr key={team.id} className="border-b border-gray-200 hover:bg-gray-50">
                   <td className="py-3 px-4 text-sm text-gray-800">{team.id}</td>
+                  <td className="py-3 px-4">
+                    {team.logoUrl ? (
+                        <img src={`http://localhost:5000${team.logoUrl}`} alt={`Logo de ${team.name}`} className="h-10 w-10 object-contain rounded-full" />
+                    ) : (
+                        <div className="h-10 w-10 bg-gray-200 rounded-full flex items-center justify-center text-xs text-gray-500">Sin Logo</div>
+                    )}
+                  </td>
                   <td className="py-3 px-4 text-sm text-gray-800">{team.name}</td>
                   <td className="py-3 px-4 text-sm text-gray-800">{team.coachName || 'N/A'}</td>
                   <td className="py-3 px-4 text-sm text-gray-800">

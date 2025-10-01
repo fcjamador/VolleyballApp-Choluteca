@@ -23,7 +23,7 @@ function UserForm() {
 
     useEffect(() => {
         // Redirige si el usuario no tiene permisos
-        if (!user || (user.role !== 'Admin' && user.role !== 'Superadmin')) {
+        if (!user || user.role !== 'Admin') {
             toast.error('No tienes permiso para acceder a esta página.');
             navigate('/');
             return;
@@ -217,17 +217,16 @@ function UserForm() {
                             value={roleId}
                             onChange={onChange}
                             required
-                            // Deshabilita el selector de rol si el usuario no es Superadmin o si está editando su propio rol
-                            disabled={user.role !== 'Superadmin' || (id && parseInt(id) === user.id)}
+                            // Un admin no puede cambiar su propio rol
+                            disabled={id && parseInt(id) === user.id}
                         >
                             <option value="">Selecciona un rol</option>
                             {roles.map((role) => (
-                                <option key={role.id} value={role.id}>
+                                <option key={role.id} value={role.id} disabled={role.name === 'Admin' && user.role !== 'Admin'}>
                                     {role.name}
                                 </option>
                             ))}
-                        </select>
-                        {user.role !== 'Superadmin' && <p className="text-sm text-gray-500 mt-1">Solo Superadmin puede cambiar roles.</p>}
+                        </select>                        
                         {id && parseInt(id) === user.id && <p className="text-sm text-gray-500 mt-1">No puedes cambiar tu propio rol.</p>}
                     </div>
                     <div className="flex items-center mb-4">

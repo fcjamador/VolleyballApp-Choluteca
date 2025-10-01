@@ -1,45 +1,38 @@
-// Ruta: backend/routes/tournamentRoutes.js
+// Ruta: d:/VolleyballApp/VolleyballApp-Choluteca/backend/routes/tournamentRoutes.js
 
 const express = require('express');
 const router = express.Router();
-const {
-    getTournaments,
-    getTournamentById,
-    createTournament,
-    updateTournament,
-    deleteTournament,
-    generateMatchesForTournament,
-    addTeamToTournament,
-    removeTeamFromTournament,
-} = require('../controllers/tournamentController');
-
-// Importamos nuestro nuevo controlador de posiciones
-const { getStandings } = require('../controllers/standingsController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
-// Rutas para torneos
+// Importaciones de controladores
+const tournamentController = require('../controllers/tournamentController');
+const standingsController = require('../controllers/standingsController'); // Controlador correcto para standings
+
+// --- Rutas de Torneos ---
 router.route('/')
-    .get(protect, getTournaments)
-    .post(protect, authorize('Admin', 'Superadmin'), createTournament);
+    .get(protect, tournamentController.getAllTournaments)
+    .post(protect, authorize('Admin', 'Superadmin'), tournamentController.createTournament);
 
 router.route('/:id')
-    .get(protect, getTournamentById)
-    .put(protect, authorize('Admin', 'Superadmin'), updateTournament)
-    .delete(protect, authorize('Admin', 'Superadmin'), deleteTournament);
+    .get(protect, tournamentController.getTournamentById)
+    .put(protect, authorize('Admin', 'Superadmin'), tournamentController.updateTournament)
+    .delete(protect, authorize('Admin', 'Superadmin'), tournamentController.deleteTournament);
 
-// Ruta para generar partidos
+// --- Rutas de Equipos en Torneo ---
+router.route('/:tournamentId/teams')
+    .get(protect, tournamentController.getTeamsInTournament)
+    .post(protect, authorize('Admin', 'Superadmin'), tournamentController.addTeamToTournament);
+
+router.route('/:tournamentId/teams/:teamId')
+    .delete(protect, authorize('Admin', 'Superadmin'), tournamentController.removeTeamFromTournament);
+
+// --- Ruta para Generar Partidos ---
 router.route('/:id/generate-matches')
-    .post(protect, authorize('Admin', 'Superadmin'), generateMatchesForTournament);
+    .post(protect, authorize('Admin', 'Superadmin'), tournamentController.generateMatches);
 
-// Rutas para gestionar equipos en un torneo
-router.route('/:id/teams')
-    .post(protect, authorize('Admin', 'Superadmin'), addTeamToTournament);
-
-router.route('/:id/teams/:teamId')
-    .delete(protect, authorize('Admin', 'Superadmin'), removeTeamFromTournament);
-
-// RUTA PARA LA TABLA DE POSICIONES (Ahora apunta a nuestro nuevo controlador)
+// --- RUTA CORREGIDA para Tabla de Posiciones ---
+// Esta ruta ahora usa el controlador correcto: standingsController
 router.route('/:id/standings')
-    .get(protect, getStandings);
+    .get(protect, standingsController.getStandings);
 
 module.exports = router;

@@ -1,32 +1,12 @@
 const { Sequelize } = require('sequelize');
-require('dotenv').config(); // Asegúrate de cargar las variables de entorno
+const config = require('./config'); // Importamos la configuración centralizada
 
-const sequelize = new Sequelize(
-    process.env.DB_NAME,
-    process.env.DB_USER,
-    process.env.DB_PASSWORD,
-    {
-        host: process.env.DB_HOST,
-        dialect: 'mysql', // Especifica que estamos usando MySQL
-        logging: false, // Puedes cambiar a true para ver las consultas SQL en la consola
-        pool: {
-            max: 5,
-            min: 0,
-            acquire: 30000,
-            idle: 10000
-        }
-    }
-);
+// Usamos la configuración del entorno actual (development, production, etc.)
+const env = process.env.NODE_ENV || 'development';
+const dbConfig = config[env];
 
-// Función para probar la conexión
-const connectDB = async () => {
-    try {
-        await sequelize.authenticate();
-        console.log('Conexión a la base de datos establecida correctamente.');
-    } catch (error) {
-        console.error('No se pudo conectar a la base de datos:', error);
-        process.exit(1); // Salir del proceso si no se puede conectar
-    }
-};
+const sequelize = dbConfig.use_env_variable
+  ? new Sequelize(process.env[dbConfig.use_env_variable], dbConfig)
+  : new Sequelize(dbConfig.database, dbConfig.username, dbConfig.password, dbConfig);
 
-module.exports = { sequelize, connectDB };
+module.exports = { sequelize };

@@ -55,18 +55,13 @@ const UserDashboard = () => {
                 tournamentService.getTournaments(user.token),
             ]);
 
-            const teamMap = fetchedTeams.reduce((acc, team) => {
-                acc[team.id] = team.name;
-                return acc;
-            }, {});
-
             const tournamentMap = fetchedTournaments.reduce((acc, tournament) => {
                 acc[tournament.id] = tournament.name;
                 return acc;
             }, {});
 
             setMatches(fetchedMatches);
-            setTeams(teamMap);
+            setTeams(fetchedTeams); // Guardar la lista completa de equipos
             setTournaments(tournamentMap);
 
         } catch (error) {
@@ -114,7 +109,16 @@ const UserDashboard = () => {
         const style = cardStyles[cardType];
 
         const calculateActiveSets = (setScores, numberOfSets) => {
-            if (!setScores || setScores.length === 0) {
+            // Si el partido está completado, usamos los scores finales guardados en el partido
+            if (match.status === 'Completado') {
+                return {
+                    team1SetsWon: match.team1Score || 0,
+                    team2SetsWon: match.team2Score || 0
+                };
+            }
+
+            // Si no, calculamos en tiempo real para partidos activos
+            if (!setScores || setScores.length === 0) { 
                 return { team1SetsWon: 0, team2SetsWon: 0 };
             }
 
@@ -141,14 +145,25 @@ const UserDashboard = () => {
             return { team1SetsWon, team2SetsWon };
         };
 
-        const activeSets = match.status === 'Activo' ? calculateActiveSets(match.setScores, match.numberOfSets) : null;
+        const setsWon = calculateActiveSets(match.setScores, match.numberOfSets);
+        const localTeam = teams.find(t => t.id === match.localTeamId);
+        const visitorTeam = teams.find(t => t.id === match.visitorTeamId);
+        const timeoutTeam = teams.find(t => t.id === match.timeoutTeamId);
 
         return (
             <div className={`bg-white p-4 rounded-lg shadow-md border-l-4 ${style.borderColor} mb-4 transition hover:shadow-lg`}>
                 <p className="text-sm text-gray-500 font-medium">{tournaments[match.tournamentId] || 'Torneo'}</p>
-                <p className="font-bold text-lg text-gray-800 my-1">
-                    {teams[match.localTeamId] || 'Equipo Local'} vs {teams[match.visitorTeamId] || 'Equipo Visitante'}
-                </p>
+                <div className="flex justify-around items-center my-2">
+                    <div className="text-center w-2/5">
+                        <img src={localTeam?.logoUrl ? `http://localhost:5000${localTeam.logoUrl}` : 'https://via.placeholder.com/50'} alt={localTeam?.name} className="h-12 w-12 mx-auto object-contain rounded-full mb-1" />
+                        <p className="font-semibold text-sm text-gray-800 truncate">{localTeam?.name || 'Local'}</p>
+                    </div>
+                    <div className="text-2xl font-bold text-gray-400">VS</div>
+                    <div className="text-center w-2/5">
+                        <img src={visitorTeam?.logoUrl ? `http://localhost:5000${visitorTeam.logoUrl}` : 'https://via.placeholder.com/50'} alt={visitorTeam?.name} className="h-12 w-12 mx-auto object-contain rounded-full mb-1" />
+                        <p className="font-semibold text-sm text-gray-800 truncate">{visitorTeam?.name || 'Visitante'}</p>
+                    </div>
+                </div>
                 
                 {/* --- MEJORA: Lógica para mostrar el tiempo fuera --- */}
                 {match.timeoutActive && match.timeoutStartTime ? (
@@ -156,19 +171,17 @@ const UserDashboard = () => {
                         <p className="text-sm font-bold text-red-600 flex items-center justify-center">
                             <FaHourglassStart className="mr-2" /> TIEMPO FUERA
                         </p>
-                        <p className="text-xs text-gray-500 text-center">
-                            Solicitado por: {teams[match.timeoutTeamId] || 'Equipo'}
-                        </p>
+                        <p className="text-xs text-gray-500 text-center">Solicitado por: {timeoutTeam?.name || 'Equipo'}</p>
                         <TimeoutTimer startTime={match.timeoutStartTime} />
                     </div>
                 ) : match.status === 'Completado' ? (
-                    <p className="text-2xl font-extrabold text-gray-700">
-                        {match.team1Score} - {match.team2Score}
+                    <p className="text-3xl font-extrabold text-gray-700 text-center">
+                        {setsWon.team1SetsWon} - {setsWon.team2SetsWon}
                     </p>
                 ) : match.status === 'Activo' ? (
-                    <div>
-                        <p className="text-2xl font-extrabold text-yellow-700">
-                            {activeSets.team1SetsWon} - {activeSets.team2SetsWon}
+                    <div className="text-center">
+                        <p className="text-3xl font-extrabold text-yellow-700">
+                            {setsWon.team1SetsWon} - {setsWon.team2SetsWon}
                             <span className="text-sm font-normal text-gray-500 ml-2">(Sets)</span>
                         </p>
                         <div className="text-xs text-gray-500 mt-1">

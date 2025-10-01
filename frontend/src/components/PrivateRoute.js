@@ -1,7 +1,6 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { toast } from 'react-toastify';
 
 const PrivateRoute = ({ children, allowedRoles }) => {
     const { user, isLoading } = useSelector((state) => state.auth);
@@ -16,9 +15,12 @@ const PrivateRoute = ({ children, allowedRoles }) => {
         return <Navigate to="/login" />;
     }
 
+    // Extraemos el nombre del rol directamente de la propiedad 'role'
+    const userRole = user ? user.role : null;
+
     // Si se especifican roles y el usuario no tiene uno de los roles permitidos
-    if (allowedRoles && !allowedRoles.includes(user.role)) {
-        return <Navigate to="/" />; // Redirige a la página principal si no tiene permiso
+    if (allowedRoles && !allowedRoles.includes(userRole)) {
+        return <Navigate to="/dashboard" />; // Redirige al dashboard si no tiene permiso
     }
 
     // Si todo está bien, renderiza el contenido de la ruta

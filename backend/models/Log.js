@@ -1,7 +1,7 @@
 'use strict';
-const { Model, DataTypes } = require('sequelize');
+const { Model } = require('sequelize');
 
-module.exports = (sequelize) => {
+module.exports = (sequelize, DataTypes) => {
     class Log extends Model {
         static associate(models) {
             // Un log está asociado a un usuario
@@ -34,11 +34,11 @@ module.exports = (sequelize) => {
             allowNull: true
         },
         oldData: {
-            type: DataTypes.JSONB,
+            type: DataTypes.JSON,
             allowNull: true
         },
         newData: {
-            type: DataTypes.JSONB,
+            type: DataTypes.JSON,
             allowNull: true
         },
     }, {

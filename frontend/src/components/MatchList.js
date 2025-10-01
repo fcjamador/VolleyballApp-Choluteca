@@ -156,7 +156,13 @@ const MatchList = () => {
                                     <td className="py-3 px-4">{match.phase || 'N/A'}</td>
                                     <td className="py-3 px-4">{formatDateTime(match.matchDate, match.matchTime)}</td>
                                     <td className="py-3 px-4 font-semibold">
-                                        {match.localTeam?.name || 'N/A'} vs {match.visitorTeam?.name || 'N/A'}
+                                        <div className="flex items-center space-x-2">
+                                            <img src={match.localTeam?.logoUrl ? `http://localhost:5000${match.localTeam.logoUrl}` : 'https://via.placeholder.com/30'} alt={match.localTeam?.name} className="h-6 w-6 object-contain rounded-full" />
+                                            <span>{match.localTeam?.name || 'N/A'}</span>
+                                            <span className="text-gray-400">vs</span>
+                                            <img src={match.visitorTeam?.logoUrl ? `http://localhost:5000${match.visitorTeam.logoUrl}` : 'https://via.placeholder.com/30'} alt={match.visitorTeam?.name} className="h-6 w-6 object-contain rounded-full" />
+                                            <span>{match.visitorTeam?.name || 'N/A'}</span>
+                                        </div>
                                     </td>
                                     <td className="py-3 px-4 text-center">
                                         <div className="font-bold text-lg">

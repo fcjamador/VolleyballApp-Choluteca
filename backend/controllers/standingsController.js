@@ -28,7 +28,7 @@ const getPointsFromScore = (setsWinner, setsLoser, numberOfSets) => {
     if (setsLoser === maxLoserSets) {
         return { winnerPoints: 2, loserPoints: 1 }; // Resultado 2-1 o 3-2
     } else {
-        return { winnerPoints: 3, loserPoints: 0 }; // Resultado 2-0, 3-0, o 3-1
+        return { winnerPoints: 3, loserPoints: 0 }; // Victoria sin llegar al set decisivo (e.g., 2-0, 3-0, 3-1)
     }
 };
 
@@ -43,7 +43,7 @@ const getStandings = asyncHandler(async (req, res) => {
             {
                 model: Team,
                 as: 'Teams',
-                attributes: ['id', 'name'],
+                attributes: ['id', 'name', 'logoUrl'],
                 through: { attributes: [] }
             },
             {
@@ -68,6 +68,7 @@ const getStandings = asyncHandler(async (req, res) => {
         standings[team.id] = {
             teamId: team.id,
             teamName: team.name,
+            teamLogo: team.logoUrl, // Añadir la URL del logo
             played: 0,
             won: 0,
             lost: 0,

@@ -19,16 +19,16 @@ function Header() {
     };
 
     return (
-        <header className='header'>
-            <div className='logo'>
-                <Link to='/'>VolleyballApp</Link>
+        <header className='flex justify-between items-center p-4 bg-white bg-opacity-80 backdrop-blur-md rounded-t-lg shadow-sm'>
+            <div className='logo text-2xl font-bold text-gray-800'>
+                <Link to='/' className="hover:text-blue-600 transition-colors">VolleyballApp</Link>
             </div>
             <nav>
-                <ul className="flex items-center">
+                <ul className="flex items-center space-x-6">
                     {user ? (
                         <>
                             {/* Enlaces de administración */}
-                            {user.role === 'Admin' || user.role === 'Superadmin' ? (
+                            {user.role === 'Admin' && (
                                 <>
                                     <li>
                                         <Link to='/users'>
@@ -62,9 +62,9 @@ function Header() {
                                         </Link>
                                     </li>
                                 </>
-                            ) : null}
+                            )}
                             <li>
-                                <button className='btn-logout' onClick={onLogout}>
+                                <button className='bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-md transition duration-300 flex items-center' onClick={onLogout}>
                                     <FaSignOutAlt className='mr-1' /> Salir
                                 </button>
                             </li>
@@ -72,12 +72,12 @@ function Header() {
                     ) : (
                         <>
                             <li>
-                                <Link to='/login'>
+                                <Link to='/login' className="text-gray-600 hover:text-blue-600 font-semibold flex items-center">
                                     <FaSignInAlt className='mr-1' /> Iniciar Sesión
                                 </Link>
                             </li>
                             <li>
-                                <Link to='/register'>
+                                <Link to='/register' className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md transition duration-300 flex items-center">
                                     <FaUser className='mr-1' /> Registrarse
                                 </Link>
                             </li>

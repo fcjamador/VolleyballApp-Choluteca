@@ -2,10 +2,9 @@ const db = require('../models');
 const User = db.User;
 const Role = db.Role;
 const Log = db.Log; // Para los logs de auditoría
-const bcrypt = require('bcryptjs');
 const asyncHandler = require('express-async-handler');
 
-// @desc    Obtener todos los usuarios (Solo para Admin/Superadmin)
+// @desc    Obtener todos los usuarios (Solo para Admin)
 // @route   GET /api/users
 // @access  Private/Admin, Superadmin
 const getUsers = asyncHandler(async (req, res) => {
@@ -16,7 +15,7 @@ const getUsers = asyncHandler(async (req, res) => {
     res.json(users);
 });
 
-// @desc    Obtener un usuario por ID (Solo para Admin/Superadmin)
+// @desc    Obtener un usuario por ID (Solo para Admin)
 // @route   GET /api/users/:id
 // @access  Private/Admin, Superadmin
 const getUserById = asyncHandler(async (req, res) => {
@@ -33,7 +32,7 @@ const getUserById = asyncHandler(async (req, res) => {
 });
 
 // @desc    Obtener todos los roles disponibles
-// @route   GET /api/users/roles
+// @route   GET /api/users/roles (ahora /api/auth/roles)
 // @access  Private/Admin, Superadmin
 const getRoles = asyncHandler(async (req, res) => {
     const roles = await Role.findAll({ attributes: ['id', 'name'] });
@@ -42,7 +41,7 @@ const getRoles = asyncHandler(async (req, res) => {
 
 
 
-// @desc    Actualizar un usuario (Solo Superadmin para roles, Admin para isActive)
+// @desc    Actualizar un usuario (Solo Admin)
 // @route   PUT /api/users/:id
 // @access  Private/Admin, Superadmin
 const updateUser = asyncHandler(async (req, res) => {
@@ -55,36 +54,31 @@ const updateUser = asyncHandler(async (req, res) => {
         throw new Error('Usuario no encontrado.');
     }
 
-    // Un Superadmin no puede cambiar su propio rol a uno inferior
-    if (req.user.id == targetUserId && user.role.name === 'Superadmin' && roleName && roleName !== 'Superadmin') {
+    // Un Admin no puede cambiar su propio rol
+    if (req.user.id == targetUserId && roleName && roleName !== 'Admin') {
         res.status(403);
-        throw new Error('Un Superadmin no puede cambiar su propio rol.');
+        throw new Error('Un Administrador no puede cambiar su propio rol a uno inferior.');
     }
 
     // Guardar datos anteriores para el log
     const oldData = { ...user.get({ plain: true }) }; // Copia los datos actuales
 
-    // Solo Superadmin puede cambiar el rol
-    if (roleName !== undefined && req.user.role.name === 'Superadmin') {
+    // Solo Admin puede cambiar el rol
+    if (roleName !== undefined) {
         const newRole = await Role.findOne({ where: { name: roleName } });
         if (!newRole) {
             res.status(400);
             throw new Error('El rol especificado no existe.');
-
         }
         user.roleId = newRole.id;
-
-    } else if (roleName !== undefined && req.user.role.name !== 'Superadmin') {
-        res.status(403);
-        throw new Error('Acceso denegado. Solo Superadmin puede cambiar roles.');
     }
 
-    // Admin y Superadmin pueden cambiar el estado activo
-    if (isActive !== undefined && (req.user.role.name === 'Admin' || req.user.role.name === 'Superadmin')) {
+    // Solo un Admin puede cambiar el estado activo, pero no el suyo propio
+    if (isActive !== undefined && req.user.id != targetUserId) {
         user.isActive = isActive;
-    } else if (isActive !== undefined) {
+    } else if (isActive !== undefined && req.user.id == targetUserId) {
         res.status(403);
-        throw new Error('Acceso denegado. Solo Admin o Superadmin pueden cambiar el estado activo.');
+        throw new Error('Un Administrador no puede desactivar su propia cuenta.');
     }
 
     if (username) user.username = username;
@@ -112,16 +106,16 @@ const updateUser = asyncHandler(async (req, res) => {
     });
 });
 
-// @desc    Eliminar un usuario (Solo Superadmin)
+// @desc    Eliminar un usuario (Solo Admin)
 // @route   DELETE /api/users/:id
 // @access  Private/Superadmin
 const deleteUser = asyncHandler(async (req, res) => {
     const targetUserId = req.params.id;
 
-    // Un superadmin no puede eliminarse a sí mismo
-    if (req.user.id == targetUserId && req.user.role.name === 'Superadmin') {
+    // Un admin no puede eliminarse a sí mismo
+    if (req.user.id == targetUserId) {
         res.status(403);
-        throw new Error('Un Superadmin no puede eliminarse a sí mismo.');
+        throw new Error('Un Administrador no puede eliminarse a sí mismo.');
     }
 
     const user = await User.findByPk(targetUserId, { include: [{ model: Role, as: 'role' }] });
@@ -145,31 +139,17 @@ const deleteUser = asyncHandler(async (req, res) => {
     res.json({ message: 'Usuario eliminado exitosamente.' });
 });
 
-// @desc    Crear un nuevo usuario (Solo Admin/Superadmin)
+// @desc    Crear un nuevo usuario (Solo Admin)
 // @route   POST /api/users
 // @access  Private/Admin, Superadmin
 const createUserByAdmin = asyncHandler(async (req, res) => {
     const { username, email, password, roleName = 'User', isActive = true } = req.body;
-
-    if (!username || !email || !password) {
-        res.status(400);
-        throw new Error('Por favor, ingrese todos los campos requeridos.');
-    }
-
-    // Solo Superadmin puede crear Admin/Superadmin
-    if (req.user.role.name !== 'Superadmin' && (roleName === 'Admin' || roleName === 'Superadmin')) {
-        res.status(403);
-        throw new Error('Acceso denegado. Solo Superadmin puede crear usuarios Administradores o Superadmins.');
-    }
 
     const userExists = await User.findOne({ where: { email } });
     if (userExists) {
         res.status(400);
         throw new Error('El usuario con este email ya existe.');
     }
-
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
 
     const userRole = await Role.findOne({ where: { name: roleName } });
     if (!userRole) {
@@ -180,7 +160,7 @@ const createUserByAdmin = asyncHandler(async (req, res) => {
     const user = await User.create({
         username,
         email,
-        password: hashedPassword,
+        password: password, // Guardar la contraseña en texto plano
         roleId: userRole.id,
         isActive
     });

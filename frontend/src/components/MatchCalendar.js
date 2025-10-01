@@ -89,7 +89,7 @@ function MatchCalendar() {
     }, [user]);
 
     useEffect(() => {
-        if (!user || (user.role !== 'Admin' && user.role !== 'Superadmin')) {
+        if (!user || user.role !== 'Admin') {
             toast.error('No autorizado. Acceso solo para administradores.');
             navigate('/login');
         } else {

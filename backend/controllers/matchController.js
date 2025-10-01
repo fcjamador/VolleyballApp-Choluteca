@@ -74,6 +74,20 @@ const updateMatch = asyncHandler(async (req, res) => {
             throw new Error('Partido no encontrado');
         }
         const oldData = match.toJSON();
+
+        // --- MEJORA: Automatización de Estado del Torneo ---
+        // Si el estado del partido cambia a 'Activo' y el torneo estaba 'Programado',
+        // actualizamos el torneo a 'Activo'.
+        if (matchData.status === 'Activo' && match.status === 'Programado') {
+            const tournament = await Tournament.findByPk(match.tournamentId, { transaction: t });
+            if (tournament && tournament.status === 'Programado') {
+                await tournament.update({ status: 'Activo' }, { transaction: t });
+                // Opcional: registrar este cambio en el log
+                console.log(`Torneo ${tournament.name} actualizado a 'Activo' automáticamente.`);
+            }
+        }
+        // --- Fin de la mejora ---
+
         await match.update(matchData, { transaction: t });
 
         if (setScores && Array.isArray(setScores)) {
@@ -244,6 +258,37 @@ const endTimeout = asyncHandler(async (req, res) => {
     res.status(200).json(match);
 });
 
+/**
+ * Manejador para eventos de Socket.IO que actualiza el marcador en tiempo real.
+ * NO guarda en la base de datos, solo retransmite la información a los clientes.
+ * Esta función se debe registrar en la configuración del servidor de Socket.IO.
+ * @param {object} io - La instancia del servidor de Socket.IO.
+ * @param {object} socket - La conexión del socket del cliente que emite el evento.
+ */
+const handleLiveScoreUpdate = (io, socket) => {
+    // Escuchamos un evento que el cliente del admin emitirá
+    socket.on('live:score:update', (data) => {
+        // Verificación de seguridad: solo los administradores pueden emitir este evento.
+        // Asumimos que un middleware de autenticación ha añadido 'user' con su 'role' al socket.
+        if (!socket.user || socket.user.role.name !== 'Admin') {
+            // Opcional: podrías emitir un evento de error de vuelta al cliente que lo envió.
+            // socket.emit('error:unauthorized', { message: 'No tienes permiso para realizar esta acción.' });
+            return; // Ignorar silenciosamente el evento si no es un admin.
+        }
+
+        const { matchId, ...updateData } = data;
+
+        if (!matchId) {
+            // No hacer nada si no hay ID de partido
+            return;
+        }
+
+        // Retransmitir los datos del cambio a todos los demás clientes
+        // que están en la "sala" de este partido, excepto al que lo envió.
+        socket.to(`match-${matchId}`).emit('live:score:update', updateData);
+    });
+};
+
 module.exports = {
     getMatches,
     getMatchById,
@@ -251,5 +296,6 @@ module.exports = {
     updateMatch,
     deleteMatch,
     requestTimeout,
-    endTimeout
+    endTimeout,
+    handleLiveScoreUpdate // Exportamos el nuevo manejador
 };

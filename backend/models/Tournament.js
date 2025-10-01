@@ -49,6 +49,12 @@ module.exports = (sequelize, DataTypes) => {
     type: {
       type: DataTypes.ENUM('League', 'Knockout', 'Group Stage'),
       defaultValue: 'League'
+    },
+    defaultNumberOfSets: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 3,
+      comment: 'Número de sets por defecto para los partidos del torneo (e.g., 3 o 5).'
     }
   }, {
     sequelize,

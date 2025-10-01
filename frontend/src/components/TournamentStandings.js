@@ -79,7 +79,7 @@ function TournamentStandings() {
                         <thead className="bg-gray-100">
                             <tr>
                                 <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pos</th>
-                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Equipo</th>
+                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" colSpan="2">Equipo</th>
                                 <th scope="col" className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider" title="Puntos">Pts</th>
                                 <th scope="col" className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider" title="Partidos Jugados">PJ</th>
                                 <th scope="col" className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider" title="Partidos Ganados">PG</th>
@@ -93,8 +93,11 @@ function TournamentStandings() {
                         <tbody className="bg-white divide-y divide-gray-200">
                             {standings.map((team, index) => (
                                 <tr key={team.teamId} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                                    <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{index + 1}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-800">{team.teamName}</td>
+                                    <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-center">{index + 1}</td>
+                                    <td className="px-2 py-2">
+                                        <img src={team.teamLogo ? `http://localhost:5000${team.teamLogo}` : 'https://via.placeholder.com/40'} alt={`Logo de ${team.teamName}`} className="h-8 w-8 object-contain rounded-full" />
+                                    </td>
+                                    <td className="px-4 py-4 whitespace-nowrap text-sm font-semibold text-gray-800">{team.teamName}</td>
                                     <td className="px-4 py-4 whitespace-nowrap text-center text-sm font-bold text-blue-600">{team.points}</td>
                                     <td className="px-4 py-4 whitespace-nowrap text-center text-sm text-gray-500">{team.played}</td>
                                     <td className="px-4 py-4 whitespace-nowrap text-center text-sm text-gray-500">{team.won}</td>

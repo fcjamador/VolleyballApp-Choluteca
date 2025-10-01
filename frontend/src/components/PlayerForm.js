@@ -24,7 +24,7 @@ function PlayerForm() {
     const { user } = useSelector((state) => state.auth);
 
     useEffect(() => {
-        if (!user || (user.role !== 'Admin' && user.role !== 'Superadmin')) {
+        if (!user || user.role !== 'Admin') {
             toast.error('No autorizado para acceder a esta página.');
             navigate('/dashboard');
             return;

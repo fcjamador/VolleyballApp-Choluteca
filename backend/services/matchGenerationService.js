@@ -65,7 +65,7 @@ const generateRoundRobinMatches = async (tournamentId) => {
                         visitorTeamId: team2Id,
                         phase: `Jornada ${round + 1}`,
                         status: 'Programado',
-                        numberOfSets: 3, // Establecer explícitamente el valor por defecto
+                        numberOfSets: tournament.defaultNumberOfSets || 3, // Usar la configuración del torneo, con 3 como fallback.
                     });
                 }
             }

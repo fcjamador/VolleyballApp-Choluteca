@@ -32,6 +32,10 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.STRING(100),
             allowNull: true
         },
+        logoUrl: { // Nuevo campo para la URL del logo
+            type: DataTypes.STRING,
+            allowNull: true
+        },
     }, {
         sequelize,
         modelName: 'Team',

@@ -12,6 +12,7 @@ function TeamForm() {
         name: '',
         coachName: '',
     });
+    const [logo, setLogo] = useState(null); // Nuevo estado para el archivo del logo
 
     const { name, coachName } = formData;
 
@@ -20,7 +21,7 @@ function TeamForm() {
     const { user } = useSelector((state) => state.auth);
 
     useEffect(() => {
-        if (!user || (user.role !== 'Admin' && user.role !== 'Superadmin')) {
+        if (!user || user.role !== 'Admin') {
             toast.error('No autorizado para acceder a esta página.');
             navigate('/dashboard');
             return;
@@ -52,17 +53,30 @@ function TeamForm() {
         }));
     };
 
+    const onFileChange = (e) => {
+        setLogo(e.target.files[0]);
+    };
+
     const onSubmit = async (e) => {
         e.preventDefault();
+
+        // Crear un objeto FormData para enviar archivos y texto
+        const teamData = new FormData();
+        teamData.append('name', name);
+        teamData.append('coachName', coachName);
+        if (logo) {
+            teamData.append('logo', logo);
+        }
 
         try {
             if (id) {
                 // Actualizar equipo existente
-                await teamService.updateTeam(id, formData, user.token);
+                // El servicio debe ser capaz de manejar FormData
+                await teamService.updateTeam(id, teamData, user.token);
                 toast.success('Equipo actualizado exitosamente.');
             } else {
                 // Crear nuevo equipo
-                await teamService.createTeam(formData, user.token);
+                await teamService.createTeam(teamData, user.token);
                 toast.success('Equipo creado exitosamente.');
             }
             navigate('/teams'); // Redirigir a la lista de equipos
@@ -112,6 +126,16 @@ function TeamForm() {
                             value={coachName}
                             onChange={onChange}
                             placeholder="Nombre del Entrenador (opcional)"
+                        />
+                    </div>
+                    <div>
+                        <label htmlFor="logo" className="block text-gray-700 text-sm font-bold mb-2">Logo del Equipo:</label>
+                        <input
+                            type="file"
+                            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            id="logo"
+                            name="logo"
+                            onChange={onFileChange}
                         />
                     </div>
                     <div className="flex items-center justify-between mt-6">

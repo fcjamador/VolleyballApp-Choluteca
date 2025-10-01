@@ -1,18 +1,12 @@
-// Ruta: frontend/src/App.js
-
-import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-
-// Layout & Auth
 import Header from './components/Header';
 import PrivateRoute from './components/PrivateRoute';
-
-// Pages & Components
+import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
-import UserDashboard from './components/UserDashboard';
+import Dashboard from './pages/Dashboard';
 import UserList from './components/UserList';
 import UserForm from './components/UserForm';
 import TeamList from './components/TeamList';
@@ -25,9 +19,13 @@ import ManageTournamentTeams from './components/ManageTournamentTeams';
 import MatchList from './components/MatchList';
 import MatchForm from './components/MatchForm';
 import MatchCalendar from './components/MatchCalendar';
+import TournamentStandings from './pages/TournamentStandings';
+import PlayerStandings from './pages/PlayerStandings';
+import UploadPoints from './pages/PlayerPointsUpload';
+import PublicLiveMatchView from './public/PublicLiveMatchView';
+import UserDashboard from './components/UserDashboard';
+import TournamentTeamManagement from './pages/TournamentTeamManagement';
 
-// --- NUEVO COMPONENTE IMPORTADO ---
-import TournamentStandings from './components/TournamentStandings';
 
 function App() {
   return (
@@ -35,58 +33,51 @@ function App() {
       <Router>
         <div className='container'>
           <Header />
-          <main>
-            <Routes>
-              {/* Rutas Públicas */}
-              <Route path='/login' element={<Login />} />
-              <Route path='/register' element={<Register />} />
+          <Routes>
+            {/* Rutas Públicas */}
+            <Route path='/login' element={<Login />} />
+            <Route path='/register' element={<Register />} />
+            <Route path='/public/match/:matchId' element={<PublicLiveMatchView />} />
 
-              {/* Rutas Privadas */}
-              <Route path='/' element={<PrivateRoute><UserDashboard /></PrivateRoute>} />
-              <Route path='/dashboard' element={<PrivateRoute><UserDashboard /></PrivateRoute>} />
+            {/* Rutas Protegidas */}
+            <Route path='/' element={<PrivateRoute><UserDashboard /></PrivateRoute>} /> {/* Ruta raíz protegida */}
+            <Route path='/dashboard' element={<PrivateRoute><UserDashboard /></PrivateRoute>} />
+            {/* Rutas de Usuarios (solo Admin) */}
+            <Route path='/users' element={<PrivateRoute allowedRoles={['Admin']}><UserList /></PrivateRoute>} />
+            <Route path='/users/new' element={<PrivateRoute allowedRoles={['Admin']}><UserForm /></PrivateRoute>} />
+            <Route path='/users/edit/:id' element={<PrivateRoute allowedRoles={['Admin']}><UserForm /></PrivateRoute>} />
 
-              {/* Gestión de Usuarios (Solo Superadmin) */}
-              <Route path='/users' element={<PrivateRoute allowedRoles={['Superadmin']}><UserList /></PrivateRoute>} />
-              <Route path='/users/new' element={<PrivateRoute allowedRoles={['Superadmin']}><UserForm /></PrivateRoute>} />
-              <Route path='/users/edit/:id' element={<PrivateRoute allowedRoles={['Superadmin']}><UserForm /></PrivateRoute>} />
+            {/* Rutas de Equipos (Admin) */}
+            <Route path='/teams' element={<PrivateRoute allowedRoles={['Admin']}><TeamList /></PrivateRoute>} />
+            <Route path='/teams/new' element={<PrivateRoute allowedRoles={['Admin']}><TeamForm /></PrivateRoute>} />
+            <Route path='/teams/edit/:id' element={<PrivateRoute allowedRoles={['Admin']}><TeamForm /></PrivateRoute>} />
 
-              {/* Gestión de Equipos (Admin & Superadmin) */}
-              <Route path='/teams' element={<PrivateRoute allowedRoles={['Admin', 'Superadmin']}><TeamList /></PrivateRoute>} />
-              <Route path='/teams/new' element={<PrivateRoute allowedRoles={['Admin', 'Superadmin']}><TeamForm /></PrivateRoute>} />
-              <Route path='/teams/edit/:id' element={<PrivateRoute allowedRoles={['Admin', 'Superadmin']}><TeamForm /></PrivateRoute>} />
+            {/* Rutas de Jugadores (Admin y Normal para ver standings) */}
+            <Route path='/players' element={<PrivateRoute allowedRoles={['Admin']}><PlayerList /></PrivateRoute>} />
+            <Route path='/players/new' element={<PrivateRoute allowedRoles={['Admin']}><PlayerForm /></PrivateRoute>} />
+            <Route path='/players/edit/:id' element={<PrivateRoute allowedRoles={['Admin']}><PlayerForm /></PrivateRoute>} />
+            <Route path='/players/upload-points' element={<PrivateRoute allowedRoles={['Admin']}><UploadPoints /></PrivateRoute>} />
+            <Route path='/players/standings' element={<PrivateRoute allowedRoles={['Admin', 'User']}><PlayerStandings /></PrivateRoute>} />
 
-              {/* Gestión de Jugadores (Admin & Superadmin) */}
-              <Route path='/players' element={<PrivateRoute allowedRoles={['Admin', 'Superadmin']}><PlayerList /></PrivateRoute>} />
-              <Route path='/players/new' element={<PrivateRoute allowedRoles={['Admin', 'Superadmin']}><PlayerForm /></PrivateRoute>} />
-              <Route path='/players/edit/:id' element={<PrivateRoute allowedRoles={['Admin', 'Superadmin']}><PlayerForm /></PrivateRoute>} />
+            {/* Rutas de Torneos (Admin) */}
+            <Route path='/tournaments' element={<PrivateRoute allowedRoles={['Admin']}><TournamentList /></PrivateRoute>} />
+            <Route path='/tournaments/new' element={<PrivateRoute allowedRoles={['Admin']}><TournamentForm /></PrivateRoute>} />
+            <Route path='/tournaments/edit/:id' element={<PrivateRoute allowedRoles={['Admin']}><TournamentForm /></PrivateRoute>} />
+            <Route path='/tournaments/:tournamentId/teams' element={<PrivateRoute allowedRoles={['Admin']}><ManageTournamentTeams /></PrivateRoute>} />
+            <Route path='/tournaments/:tournamentId/standings' element={<PrivateRoute allowedRoles={['Admin', 'User']}><TournamentStandings /></PrivateRoute>} />
+            <Route path='/tournaments/:tournamentId/manage-teams' element={<PrivateRoute allowedRoles={['Admin']}><TournamentTeamManagement /></PrivateRoute>} />
 
-              {/* Gestión de Torneos (Admin & Superadmin) */}
-              <Route path='/tournaments' element={<PrivateRoute allowedRoles={['Admin', 'Superadmin']}><TournamentList /></PrivateRoute>} />
-              <Route path='/tournaments/new' element={<PrivateRoute allowedRoles={['Admin', 'Superadmin']}><TournamentForm /></PrivateRoute>} />
-              <Route path='/tournaments/edit/:id' element={<PrivateRoute allowedRoles={['Admin', 'Superadmin']}><TournamentForm /></PrivateRoute>} />
-              <Route path='/tournaments/:tournamentId/teams' element={<PrivateRoute allowedRoles={['Admin', 'Superadmin']}><ManageTournamentTeams /></PrivateRoute>} />
-              
-              {/* --- NUEVA RUTA PARA LA TABLA DE POSICIONES --- */}
-              {/* Esta ruta es accesible para todos los roles de usuario logueados */}
-              <Route 
-                path='/tournaments/:tournamentId/standings' 
-                element={
-                  <PrivateRoute allowedRoles={['Admin', 'Superadmin', 'Normal']}>
-                    <TournamentStandings />
-                  </PrivateRoute>
-                } 
-              />
 
-              {/* Gestión de Partidos (Admin & Superadmin) */}
-              <Route path='/matches' element={<PrivateRoute allowedRoles={['Admin', 'Superadmin']}><MatchList /></PrivateRoute>} />
-              <Route path='/matches/new' element={<PrivateRoute allowedRoles={['Admin', 'Superadmin']}><MatchForm /></PrivateRoute>} />
-              <Route path='/matches/edit/:id' element={<PrivateRoute allowedRoles={['Admin', 'Superadmin']}><MatchForm /></PrivateRoute>} />
-              <Route path='/calendar' element={<PrivateRoute allowedRoles={['Admin', 'Superadmin']}><MatchCalendar /></PrivateRoute>} />
-            </Routes>
-          </main>
+            {/* Rutas de Partidos (Admin) */}
+            <Route path='/matches' element={<PrivateRoute allowedRoles={['Admin']}><MatchList /></PrivateRoute>} />
+            <Route path='/matches/new' element={<PrivateRoute allowedRoles={['Admin']}><MatchForm /></PrivateRoute>} />
+            <Route path='/matches/edit/:id' element={<PrivateRoute allowedRoles={['Admin']}><MatchForm /></PrivateRoute>} />
+            <Route path='/calendar' element={<PrivateRoute allowedRoles={['Admin']}><MatchCalendar /></PrivateRoute>} />
+
+          </Routes>
         </div>
       </Router>
-      <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} />
+      <ToastContainer />
     </>
   );
 }

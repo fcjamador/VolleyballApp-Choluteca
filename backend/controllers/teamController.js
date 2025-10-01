@@ -3,6 +3,7 @@ const asyncHandler = require('express-async-handler');
 const Team = db.Team;
 const Player = db.Player; // Para incluir jugadores con los equipos
 const Log = db.Log; // Para los logs de auditoría
+const fs = require('fs'); // Para manejar archivos
 
 // @desc    Obtener todos los equipos
 // @route   GET /api/teams
@@ -54,7 +55,13 @@ const createTeam = asyncHandler(async (req, res) => {
         throw new Error('Ya existe un equipo con este nombre.');
     }
 
-    const team = await Team.create({ name, coachName });
+    const logoUrl = req.file ? `/uploads/logos/${req.file.filename}` : null;
+
+    const team = await Team.create({
+        name,
+        coachName,
+        logoUrl
+    });
 
     // Registrar en el log de auditoría
     await Log.create({
@@ -83,8 +90,20 @@ const updateTeam = asyncHandler(async (req, res) => {
 
     const oldData = team.toJSON(); // Guardar datos anteriores para el log
 
+    // Si se sube un nuevo logo, eliminar el anterior si existe
+    if (req.file) {
+        if (team.logoUrl) {
+            // Eliminar el archivo antiguo del servidor
+            const oldLogoPath = `uploads/logos/${team.logoUrl.split('/').pop()}`;
+            if (fs.existsSync(oldLogoPath)) {
+                fs.unlinkSync(oldLogoPath);
+            }
+        }
+        team.logoUrl = `/uploads/logos/${req.file.filename}`;
+    }
+
     if (name) team.name = name;
-    if (coachName !== undefined) team.coachName = coachName; // Permite setear a null
+    if (coachName !== undefined) team.coachName = coachName;
 
     await team.save();
 
@@ -113,6 +132,13 @@ const deleteTeam = asyncHandler(async (req, res) => {
 
     const oldData = team.toJSON(); // Guardar datos antes de eliminar
 
+    // Eliminar el logo asociado si existe
+    if (team.logoUrl) {
+        const logoPath = `uploads/logos/${team.logoUrl.split('/').pop()}`;
+        if (fs.existsSync(logoPath)) {
+            fs.unlinkSync(logoPath);
+        }
+    }
 
     await team.destroy();
 

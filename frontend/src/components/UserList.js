@@ -27,8 +27,8 @@ function UserList() {
   }, [user.token]);
 
   useEffect(() => {
-    // Protección de ruta: Solo Superadmin puede ver la lista de usuarios
-    if (!user || user.role !== 'Superadmin') {
+    // Protección de ruta: Solo Admin puede ver la lista de usuarios
+    if (!user || user.role !== 'Admin') {
       toast.error('No autorizado para acceder a la gestión de usuarios.');
       navigate('/dashboard'); // Redirige al dashboard o inicio
       return;
@@ -55,7 +55,7 @@ function UserList() {
   };
 
   const handleDeleteUser = async (userId) => {
-    if (user.id === userId) {
+    if (user.id === userId) { // Un admin no puede eliminarse a sí mismo
         toast.error('No puedes eliminar tu propia cuenta de Superadmin.');
         return;
     }
@@ -118,7 +118,7 @@ function UserList() {
                   <td className="py-3 px-4 text-sm text-gray-800">
                     <span className={`px-2 py-1 rounded-full text-xs font-semibold
                         ${u.role?.name === 'Superadmin' ? 'bg-purple-200 text-purple-800' : ''}
-                        ${u.role?.name === 'Admin' ? 'bg-blue-200 text-blue-800' : ''}
+                        ${u.role?.name === 'Admin' ? 'bg-red-200 text-red-800' : ''}
                         ${u.role?.name === 'Normal' ? 'bg-green-200 text-green-800' : ''}
                     `}>
                         {u.role ? u.role.name : 'N/A'}
@@ -133,8 +133,8 @@ function UserList() {
                   </td>
                   <td className="py-3 px-4 text-sm text-gray-800">
                     <div className="flex space-x-2">
-                      {/* Botón de Editar (solo Superadmin puede editar) */}
-                      {user.role === 'Superadmin' && (
+                      {/* Botón de Editar (solo Admin puede editar) */}
+                      {user.role === 'Admin' && (
                         <Link
                           to={`/users/edit/${u.id}`}
                           className="bg-blue-500 hover:bg-blue-600 text-white py-1 px-2 rounded-md transition duration-200 flex items-center text-xs"
@@ -142,8 +142,8 @@ function UserList() {
                           <FaEdit className="mr-1" /> Editar
                         </Link>
                       )}
-                      {/* Botón de Activar/Desactivar (Admin y Superadmin pueden) */}
-                      {(user.role === 'Admin' || user.role === 'Superadmin') && u.id !== user.id && (
+                      {/* Botón de Activar/Desactivar (Admin puede, pero no a sí mismo) */}
+                      {u.id !== user.id && (
                         <button
                           onClick={() => handleToggleActive(u.id, u.isActive)}
                           className={`${u.isActive ? 'bg-yellow-500 hover:bg-yellow-600' : 'bg-green-500 hover:bg-green-600'} text-white py-1 px-2 rounded-md transition duration-200 flex items-center text-xs`}
@@ -151,8 +151,8 @@ function UserList() {
                           {u.isActive ? <FaToggleOff className="mr-1" /> : <FaToggleOn className="mr-1" />} {u.isActive ? 'Desactivar' : 'Activar'}
                         </button>
                       )}
-                      {/* Botón de Eliminar (solo Superadmin puede eliminar, y no a sí mismo) */}
-                      {user.role === 'Superadmin' && u.id !== user.id && (
+                      {/* Botón de Eliminar (Admin puede, pero no a sí mismo) */}
+                      {u.id !== user.id && (
                         <button
                           onClick={() => handleDeleteUser(u.id)}
                           className="bg-red-500 hover:bg-red-600 text-white py-1 px-2 rounded-md transition duration-200 flex items-center text-xs"

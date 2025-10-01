@@ -23,7 +23,7 @@ const TournamentForm = () => {
     const { user } = useSelector((state) => state.auth);
 
     useEffect(() => {
-        if (!user || (user.role !== 'Admin' && user.role !== 'Superadmin')) {
+        if (!user || user.role !== 'Admin') {
             toast.error('No autorizado para acceder a esta página.');
             navigate('/');
         }
@@ -100,6 +100,25 @@ const TournamentForm = () => {
             console.error('Error submitting tournament form:', err);
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    // Objeto con las explicaciones para cada tipo de torneo
+    const tournamentTypeExplanations = {
+        'League': {
+            title: 'Formato de Liga (Todos contra todos)',
+            description: 'En este formato, cada equipo juega contra todos los demás equipos del torneo una o varias veces. El ganador se determina por la tabla de posiciones al final de todos los partidos, usualmente basado en puntos.',
+            phases: 'Fase única: Todos los partidos cuentan para una sola tabla de posiciones.'
+        },
+        'Knockout': {
+            title: 'Formato de Eliminatoria Directa',
+            description: 'Este es un formato de eliminación. El equipo que pierde un partido queda eliminado del torneo. Los ganadores avanzan a la siguiente ronda (octavos, cuartos, semifinal, final) hasta que solo queda un campeón.',
+            phases: 'Rondas sucesivas: Cuartos de Final -> Semifinal -> Final.'
+        },
+        'Group Stage': {
+            title: 'Formato de Fase de Grupos',
+            description: 'Los equipos se dividen en varios grupos. Dentro de cada grupo, juegan en un formato de liga (todos contra todos). Los mejores equipos de cada grupo (usualmente los dos primeros) avanzan a una fase de eliminación directa.',
+            phases: 'Fase 1: Partidos de grupo. Fase 2: Rondas de eliminación (cuartos, semifinal, etc.) con los clasificados.'
         }
     };
 
@@ -181,6 +200,16 @@ const TournamentForm = () => {
                         <option value="Knockout">Eliminatoria Directa</option>
                         <option value="Group Stage">Fase de Grupos</option>
                     </select>
+                    {/* --- NUEVO: Cuadro de explicación dinámico --- */}
+                    {type && tournamentTypeExplanations[type] && (
+                        <div className="mt-4 p-4 bg-blue-50 border-l-4 border-blue-400 text-blue-800 rounded-r-lg">
+                            <h4 className="font-bold">{tournamentTypeExplanations[type].title}</h4>
+                            <p className="text-sm mt-1">{tournamentTypeExplanations[type].description}</p>
+                            <p className="text-sm mt-2">
+                                <strong className="font-semibold">Fases Típicas:</strong> {tournamentTypeExplanations[type].phases}
+                            </p>
+                        </div>
+                    )}
                 </div>
                 <div className="mb-4">
                     <label htmlFor="status" className="block text-gray-700 text-sm font-bold mb-2">

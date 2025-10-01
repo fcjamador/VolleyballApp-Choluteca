@@ -1,80 +1,76 @@
-// Ruta: backend/controllers/tournamentController.js
+// Ruta: d:/VolleyballApp/VolleyballApp-Choluteca/backend/controllers/tournamentController.js
 
-const { Tournament, Team, Match, TournamentGroup, SetScore, sequelize } = require('../models');
+const asyncHandler = require('express-async-handler');
+const { Tournament, Team, Match, TournamentGroup, sequelize } = require('../models');
 
-// Crear un nuevo torneo
-exports.createTournament = async (req, res) => {
-    try {
-        const tournament = await Tournament.create(req.body);
-        res.status(201).json(tournament);
-    } catch (error) {
-        res.status(400).json({ message: 'Error al crear el torneo', error: error.message });
+// @desc    Crear un nuevo torneo
+// @route   POST /api/tournaments
+// @access  Private/Admin
+const createTournament = asyncHandler(async (req, res) => {
+    const tournament = await Tournament.create(req.body);
+    res.status(201).json(tournament);
+});
+
+// @desc    Obtener todos los torneos
+// @route   GET /api/tournaments
+// @access  Private
+const getAllTournaments = asyncHandler(async (req, res) => {
+    const tournaments = await Tournament.findAll({
+        include: [{ model: Team, as: 'Teams', attributes: ['id', 'name'] }]
+    });
+    res.status(200).json(tournaments);
+});
+
+// @desc    Obtener un torneo por ID
+// @route   GET /api/tournaments/:id
+// @access  Private
+const getTournamentById = asyncHandler(async (req, res) => {
+    const tournament = await Tournament.findByPk(req.params.id, {
+        include: [
+            { model: Team, as: 'Teams', attributes: ['id', 'name'] },
+            { model: Match, as: 'matches', include: ['localTeam', 'visitorTeam'] }
+        ]
+    });
+    if (!tournament) {
+        res.status(404);
+        throw new Error('Torneo no encontrado');
     }
-};
+    res.status(200).json(tournament);
+});
 
-// Obtener todos los torneos
-exports.getAllTournaments = async (req, res) => {
-    try {
-        const tournaments = await Tournament.findAll({
-            include: [{ model: Team, as: 'Teams', attributes: ['id', 'name'] }]
-        });
-        res.status(200).json(tournaments);
-    } catch (error) {
-        res.status(500).json({ message: 'Error al obtener los torneos', error: error.message });
+// @desc    Actualizar un torneo
+// @route   PUT /api/tournaments/:id
+// @access  Private/Admin
+const updateTournament = asyncHandler(async (req, res) => {
+    const [updated] = await Tournament.update(req.body, { where: { id: req.params.id } });
+    if (updated) {
+        const updatedTournament = await Tournament.findByPk(req.params.id);
+        res.status(200).json(updatedTournament);
+    } else {
+        res.status(404);
+        throw new Error('Torneo no encontrado');
     }
-};
+});
 
-// Obtener un torneo por ID
-exports.getTournamentById = async (req, res) => {
-    try {
-        const tournament = await Tournament.findByPk(req.params.id, {
-            include: [
-                { model: Team, as: 'Teams', attributes: ['id', 'name'] },
-                { model: Match, as: 'matches', include: ['localTeam', 'visitorTeam'] }
-            ]
-        });
-        if (!tournament) {
-            return res.status(404).json({ message: 'Torneo no encontrado' });
-        }
-        res.status(200).json(tournament);
-    } catch (error) {
-        res.status(500).json({ message: 'Error al obtener el torneo', error: error.message });
+// @desc    Eliminar un torneo
+// @route   DELETE /api/tournaments/:id
+// @access  Private/Admin
+const deleteTournament = asyncHandler(async (req, res) => {
+    const deleted = await Tournament.destroy({ where: { id: req.params.id } });
+    if (deleted) {
+        res.status(204).send();
+    } else {
+        res.status(404);
+        throw new Error('Torneo no encontrado');
     }
-};
+});
 
-// Actualizar un torneo
-exports.updateTournament = async (req, res) => {
-    try {
-        const [updated] = await Tournament.update(req.body, { where: { id: req.params.id } });
-        if (updated) {
-            const updatedTournament = await Tournament.findByPk(req.params.id);
-            res.status(200).json(updatedTournament);
-        } else {
-            res.status(404).json({ message: 'Torneo no encontrado' });
-        }
-    } catch (error) {
-        res.status(400).json({ message: 'Error al actualizar el torneo', error: error.message });
-    }
-};
-
-// Eliminar un torneo
-exports.deleteTournament = async (req, res) => {
-    try {
-        const deleted = await Tournament.destroy({ where: { id: req.params.id } });
-        if (deleted) {
-            res.status(204).send();
-        } else {
-            res.status(404).json({ message: 'Torneo no encontrado' });
-        }
-    } catch (error) {
-        res.status(500).json({ message: 'Error al eliminar el torneo', error: error.message });
-    }
-};
-
-// --- FUNCIÓN MODIFICADA PARA GENERAR PARTIDOS ---
-exports.generateMatches = async (req, res) => {
+// @desc    Generar partidos para un torneo
+// @route   POST /api/tournaments/:id/generate-matches
+// @access  Private/Admin
+const generateMatches = asyncHandler(async (req, res) => {
     const { id } = req.params;
-    const { numberOfGroups } = req.body; // Nuevo parámetro que vendrá del frontend
+    const { numberOfGroups } = req.body;
 
     const transaction = await sequelize.transaction();
     try {
@@ -82,23 +78,26 @@ exports.generateMatches = async (req, res) => {
 
         if (!tournament) {
             await transaction.rollback();
-            return res.status(404).json({ message: 'Torneo no encontrado' });
+            res.status(404);
+            throw new Error('Torneo no encontrado');
         }
 
-        // Limpiar partidos y grupos existentes para este torneo antes de generar nuevos
+        // Limpiar partidos y grupos existentes
         await Match.destroy({ where: { tournamentId: id }, transaction });
         await TournamentGroup.destroy({ where: { tournamentId: id }, transaction });
 
         if (tournament.type === 'Group Stage') {
             if (!numberOfGroups || numberOfGroups < 1) {
                 await transaction.rollback();
-                return res.status(400).json({ message: 'Se requiere un número válido de grupos.' });
+                res.status(400);
+                throw new Error('Se requiere un número válido de grupos.');
             }
 
             const teams = tournament.Teams;
             if (teams.length < numberOfGroups * 2) {
                 await transaction.rollback();
-                return res.status(400).json({ message: 'No hay suficientes equipos para formar la cantidad de grupos especificada.' });
+                res.status(400);
+                throw new Error('No hay suficientes equipos para formar la cantidad de grupos especificada.');
             }
 
             const shuffledTeams = [...teams].sort(() => 0.5 - Math.random());
@@ -111,7 +110,7 @@ exports.generateMatches = async (req, res) => {
             const allMatches = [];
             for (let i = 0; i < groups.length; i++) {
                 const groupTeams = groups[i];
-                const groupName = `Grupo ${String.fromCharCode(65 + i)}`; // Grupo A, B, C...
+                const groupName = `Grupo ${String.fromCharCode(65 + i)}`;
 
                 const newGroup = await TournamentGroup.create({
                     tournamentId: id,
@@ -134,13 +133,14 @@ exports.generateMatches = async (req, res) => {
 
             await Match.bulkCreate(allMatches, { transaction });
             await transaction.commit();
-            return res.status(201).json({ message: `${allMatches.length} partidos de fase de grupos generados exitosamente.` });
+            res.status(201).json({ message: `${allMatches.length} partidos de fase de grupos generados exitosamente.` });
 
         } else if (tournament.type === 'League') {
             const teams = tournament.Teams;
             if (teams.length < 2) {
                 await transaction.rollback();
-                return res.status(400).json({ message: 'Se necesitan al menos 2 equipos para generar partidos.' });
+                res.status(400);
+                throw new Error('Se necesitan al menos 2 equipos para generar partidos.');
             }
 
             const matchesToCreate = [];
@@ -158,134 +158,83 @@ exports.generateMatches = async (req, res) => {
 
             await Match.bulkCreate(matchesToCreate, { transaction });
             await transaction.commit();
-            return res.status(201).json({ message: `${matchesToCreate.length} partidos de liga generados exitosamente.` });
+            res.status(201).json({ message: `${matchesToCreate.length} partidos de liga generados exitosamente.` });
 
         } else {
             await transaction.rollback();
-            return res.status(400).json({ message: `El tipo de torneo '${tournament.type}' no admite la generación automática de partidos en esta fase.` });
+            res.status(400);
+            throw new Error(`El tipo de torneo '${tournament.type}' no admite la generación automática de partidos en esta fase.`);
         }
 
     } catch (error) {
         await transaction.rollback();
-        console.error('Error al generar partidos:', error);
-        return res.status(500).json({ message: 'Error interno del servidor al generar partidos.', error: error.message });
+        // asyncHandler se encargará de pasar el error al middleware
+        throw new Error(`Error interno del servidor al generar partidos: ${error.message}`);
     }
-};
+});
 
-// --- OTRAS FUNCIONES DE GESTIÓN (Añadir/quitar equipos, posiciones, etc.) ---
-
-exports.addTeamToTournament = async (req, res) => {
-    try {
-        const { tournamentId } = req.params;
-        const { teamId } = req.body;
-        const tournament = await Tournament.findByPk(tournamentId);
-        if (!tournament) return res.status(404).json({ message: 'Torneo no encontrado' });
-        const team = await Team.findByPk(teamId);
-        if (!team) return res.status(404).json({ message: 'Equipo no encontrado' });
-        await tournament.addTeam(team);
-        res.status(200).json({ message: 'Equipo añadido al torneo' });
-    } catch (error) {
-        res.status(500).json({ message: 'Error al añadir equipo al torneo', error: error.message });
+// @desc    Añadir un equipo a un torneo
+// @route   POST /api/tournaments/:tournamentId/teams
+// @access  Private/Admin
+const addTeamToTournament = asyncHandler(async (req, res) => {
+    const { tournamentId } = req.params;
+    const { teamId } = req.body;
+    const tournament = await Tournament.findByPk(tournamentId);
+    if (!tournament) {
+        res.status(404);
+        throw new Error('Torneo no encontrado');
     }
-};
-
-exports.removeTeamFromTournament = async (req, res) => {
-    try {
-        const { tournamentId, teamId } = req.params;
-        const tournament = await Tournament.findByPk(tournamentId);
-        if (!tournament) return res.status(404).json({ message: 'Torneo no encontrado' });
-        const team = await Team.findByPk(teamId);
-        if (!team) return res.status(404).json({ message: 'Equipo no encontrado' });
-        await tournament.removeTeam(team);
-        res.status(200).json({ message: 'Equipo eliminado del torneo' });
-    } catch (error) {
-        res.status(500).json({ message: 'Error al eliminar equipo del torneo', error: error.message });
+    const team = await Team.findByPk(teamId);
+    if (!team) {
+        res.status(404);
+        throw new Error('Equipo no encontrado');
     }
-};
+    await tournament.addTeam(team);
+    res.status(200).json({ message: 'Equipo añadido al torneo' });
+});
 
-exports.getTeamsInTournament = async (req, res) => {
-    try {
-        const { tournamentId } = req.params;
-        const tournament = await Tournament.findByPk(tournamentId, {
-            include: [{ model: Team, as: 'Teams', attributes: ['id', 'name'] }]
-        });
-        if (!tournament) return res.status(404).json({ message: 'Torneo no encontrado' });
-        res.status(200).json(tournament.Teams);
-    } catch (error) {
-        res.status(500).json({ message: 'Error al obtener los equipos del torneo', error: error.message });
+// @desc    Quitar un equipo de un torneo
+// @route   DELETE /api/tournaments/:tournamentId/teams/:teamId
+// @access  Private/Admin
+const removeTeamFromTournament = asyncHandler(async (req, res) => {
+    const { tournamentId, teamId } = req.params;
+    const tournament = await Tournament.findByPk(tournamentId);
+    if (!tournament) {
+        res.status(404);
+        throw new Error('Torneo no encontrado');
     }
-};
-
-exports.getStandings = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const tournament = await Tournament.findByPk(id, {
-            include: [
-                { model: Team, as: 'Teams', attributes: ['id', 'name'] },
-                {
-                    model: Match,
-                    as: 'matches',
-                    where: { status: 'Completado' },
-                    required: false,
-                    include: [{ model: SetScore, as: 'setScores' }]
-                }
-            ]
-        });
-
-        if (!tournament) {
-            return res.status(404).json({ message: 'Torneo no encontrado' });
-        }
-
-        const standings = tournament.Teams.map(team => {
-            let played = 0, won = 0, lost = 0, points = 0, setsFor = 0, setsAgainst = 0;
-
-            tournament.matches.forEach(match => {
-                if (match.localTeamId === team.id || match.visitorTeamId === team.id) {
-                    played++;
-                    const isLocal = match.localTeamId === team.id;
-                    const teamSets = isLocal ? match.team1Score : match.team2Score;
-                    const opponentSets = isLocal ? match.team2Score : match.team1Score;
-
-                    setsFor += teamSets;
-                    setsAgainst += opponentSets;
-
-                    if (match.winnerId === team.id) {
-                        won++;
-                        points += (teamSets === 3 && opponentSets < 2) ? 3 : 2;
-                    } else {
-                        lost++;
-                        points += (teamSets === 2 && opponentSets === 3) ? 1 : 0;
-                    }
-                }
-            });
-
-            const setDifference = setsFor - setsAgainst;
-            const setRatio = setsAgainst === 0 ? Infinity : setsFor / setsAgainst;
-
-            return {
-                teamId: team.id,
-                teamName: team.name,
-                played,
-                won,
-                lost,
-                points,
-                setsFor,
-                setsAgainst,
-                setDifference,
-                setRatio
-            };
-        });
-
-        standings.sort((a, b) => {
-            if (b.points !== a.points) return b.points - a.points;
-            if (b.won !== a.won) return b.won - a.won;
-            if (b.setDifference !== a.setDifference) return b.setDifference - a.setDifference;
-            if (b.setRatio !== a.setRatio) return b.setRatio - a.setRatio;
-            return 0;
-        });
-
-        res.status(200).json({ tournamentName: tournament.name, standings });
-    } catch (error) {
-        res.status(500).json({ message: 'Error al calcular la tabla de posiciones', error: error.message });
+    const team = await Team.findByPk(teamId);
+    if (!team) {
+        res.status(404);
+        throw new Error('Equipo no encontrado');
     }
+    await tournament.removeTeam(team);
+    res.status(200).json({ message: 'Equipo eliminado del torneo' });
+});
+
+// @desc    Obtener los equipos de un torneo
+// @route   GET /api/tournaments/:tournamentId/teams
+// @access  Private
+const getTeamsInTournament = asyncHandler(async (req, res) => {
+    const { tournamentId } = req.params;
+    const tournament = await Tournament.findByPk(tournamentId, {
+        include: [{ model: Team, as: 'Teams', attributes: ['id', 'name'] }]
+    });
+    if (!tournament) {
+        res.status(404);
+        throw new Error('Torneo no encontrado');
+    }
+    res.status(200).json(tournament.Teams);
+});
+
+module.exports = {
+    createTournament,
+    getAllTournaments,
+    getTournamentById,
+    updateTournament,
+    deleteTournament,
+    generateMatches,
+    addTeamToTournament,
+    removeTeamFromTournament,
+    getTeamsInTournament,
 };
